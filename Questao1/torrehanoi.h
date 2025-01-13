@@ -14,4 +14,5 @@ int movimento_valido(vertice v1, vertice v2);
 void gerar_matriz_adjacencia(vertice *grafo, int matriz[][Possibilidades]);
 void exibir_matriz(vertice *grafo);
 
-
+void menor_caminho(int matriz[][Possibilidades]);
+void dijkstra(int matriz[][Possibilidades], int inicio, int fim);
