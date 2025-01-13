@@ -5,7 +5,7 @@
 
 #define max_func 1000
 #define max_vet 101
-
+//oi
 typedef struct Funcionario
 {
     char matricula[7];
