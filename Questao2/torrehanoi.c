@@ -1,8 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "torrehanoi.h"
 #include <limits.h>
+#include <windows.h>
 #include <time.h>
+#include "torrehanoi.h"
 
 int movimento_valido(vertice v1, vertice v2)
 {
@@ -18,45 +19,50 @@ int movimento_valido(vertice v1, vertice v2)
         }
     }
 
-    if(diferenca > 1) // Se a diferença for maior que 1
-        valido = 0; // O movimento será inválido
+    if(diferenca > 1) valido = 0; // Se a diferença for maior que 1, o movimento será inválido
 
     else // Se não
     {
         int invalido = 1;
-        for(int posVerificacao = 0; posVerificacao < Discos && invalido; posVerificacao++)
-            if(posVerificacao != posicao_diferente &&
-            ((v1.posicao[posVerificacao] == v1.posicao[posicao_diferente] && posVerificacao < posicao_diferente) ||
-            (v2.posicao[posVerificacao] == v2.posicao[posicao_diferente] && posVerificacao < posicao_diferente)))
-            invalido = 0;
 
-        if (!invalido)
-        valido = 0;
-  }
+        // Verifica se o movimento viola as regras da Torre de Hanói
+        for(int verificar_posicao = 0; verificar_posicao < Discos && invalido; verificar_posicao++)
+        {
+            if(verificar_posicao != posicao_diferente && // Verifica se não é o mesmo disco que já foi verificado E 
+            ((v1.posicao[verificar_posicao] == v1.posicao[posicao_diferente] && verificar_posicao < posicao_diferente) || // Verifica se há um disco menor abaixo do disco movido OU
+            (v2.posicao[verificar_posicao] == v2.posicao[posicao_diferente] && verificar_posicao < posicao_diferente))) // Verifica se o disco movido foi colocado sobre um disco menor
+                invalido = 0; // Se sim, marca o movimento como inválido
+        }
 
-  return (valido);
+        if (!invalido) valido = 0; // Se o movimento é inválido, atualiza a variável de retorno
+    }
+
+    return valido;
 }
 
 void gerar_matriz_adjacencia(vertice *grafo, int matriz[][Possibilidades])
 {
     int disco, atribuido;
     
+    // Preenche as posições iniciais do grafo
     for(int atual = 0; atual < Possibilidades; atual++)
     {
         atribuido = atual;
+
         for(disco = 0; disco < Discos; disco++)
         {
-            grafo[atual].posicao[disco] = atribuido % Pinos + 1;
-            atribuido /= Pinos;
+            grafo[atual].posicao[disco] = atribuido % Pinos + 1; // Calcula o pino em que o disco está
+            atribuido /= Pinos; // Atualiza o número para processar o próximo disco
         }
     }
 
+    // Gera a matriz de adjacência com base nas regras
     for(int atual = 0; atual < Possibilidades; atual++)
     {
-        for(int amigo = 0; amigo < Possibilidades; amigo++)
+        for(int vizinho = 0; vizinho < Possibilidades; vizinho++)
         {
-            if(movimento_valido(grafo[atual], grafo[amigo]) == 1) matriz[atual][amigo] = 1; // Movimento Válido
-            else matriz[atual][amigo] = 0; //Movimento Inválido
+            if(movimento_valido(grafo[atual], grafo[vizinho]) == 1) matriz[atual][vizinho] = 1; // Movimento Válido
+            else matriz[atual][vizinho] = 0; //Movimento Inválido
         }
     }
 }
@@ -65,21 +71,20 @@ void exibir_matriz(vertice *grafo)
 {
     for(int atual = 0; atual < Possibilidades; atual++)
     {
-        printf("Vet %.2d:", atual);
+        printf("Vet. %.2d:", atual);
         for(int disco = 0; disco < Discos; disco++)
             printf(" %d", grafo[atual].posicao[disco]);
         printf("\n");
     }
 }
 
-void fordbellman(int matriz[][Possibilidades], int inicio, int fim)
+int fordbellman(int matriz[][Possibilidades], int inicio, int fim)
 {
     int distancias[Possibilidades], i, passo, u, v;
     
     for (i = 0; i < Possibilidades; i++)
-    {
         distancias[i] = INT_MAX;
-    }
+    
 
     distancias[inicio] = 0;
 
@@ -90,32 +95,37 @@ void fordbellman(int matriz[][Possibilidades], int inicio, int fim)
             for (v = 0; v < Possibilidades; v++)
             {
                 if (matriz[u][v] && distancias[u] != INT_MAX &&
-                    distancias[u] + matriz[u][v] < distancias[v])
-                {
+                distancias[u] + matriz[u][v] < distancias[v])
                     distancias[v] = distancias[u] + matriz[u][v];
-
-                }
             }
         }
     }
-    printf("\nMenor caminho de %d para %d: %d\n", inicio, fim, distancias[fim]);
+
+    return distancias[fim];
 }
 
 void menor_caminho(int matriz[][Possibilidades])
 {
-    int inicio = 0;
-    int fim = Possibilidades - 1;
+    int inicio = 0, resultado, fim;
 
-    clock_t startVerticies_time, end_time;
-    double time;
+    printf("\nInforme o qual o indice que a torre precisa chegar: ");
+    scanf(" %d", &fim);
 
-    startVerticies_time = clock();
-    fordbellman(matriz, inicio, fim);
-    end_time = clock();
+    LARGE_INTEGER inicio_w, fim_w, frequencia; 
+    double tempo;
 
-    time = (double)(end_time - startVerticies_time) / CLOCKS_PER_SEC;
+    QueryPerformanceFrequency(&frequencia); 
+    QueryPerformanceCounter(&inicio_w); 
 
-    printf("Tempo gasto - Bellman: %lf ms\n", time * 1000);
+    resultado = fordbellman(matriz, inicio, fim);
+
+    QueryPerformanceCounter(&fim_w); 
+
+    tempo = (double)(fim_w.QuadPart - inicio_w.QuadPart) * 1000.0 / frequencia.QuadPart; 
+
+    printf("Menor caminho de %d para %d: %d\n", inicio, fim, resultado);
+
+    printf("Tempo decorrido: %.5f milissegundos\n", tempo);
 }
 
 int main()
@@ -124,8 +134,8 @@ int main()
     int matriz_adjacencia[Possibilidades][Possibilidades];
 
     gerar_matriz_adjacencia(grafo, matriz_adjacencia);
-    //exibir_matriz(grafo);  
+    exibir_matriz(grafo);  
     
-    menorcaminho(matriz_adjacencia);
+    menor_caminho(matriz_adjacencia);
     return 0;
 }
