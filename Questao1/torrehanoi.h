@@ -9,7 +9,7 @@ typedef struct
 {
     int posicao[Discos]; // Posição dos Discos em relação aos Pinos
 }vertice;
-//oi
+
 int movimento_valido(vertice v1, vertice v2); 
 void gerar_matriz_adjacencia(vertice *grafo, int matriz[][Possibilidades]);
 void exibir_matriz(vertice *grafo);
